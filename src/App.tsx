@@ -17,10 +17,17 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.shiftKey && e.altKey && e.key.toLowerCase() === "a") {
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+
+      if (
+        e.shiftKey &&
+        (isMac ? e.metaKey : e.altKey) && // Use Command on Mac, Alt on Windows
+        e.key.toLowerCase() === "a"
+      ) {
         setAdminMode((prev) => !prev);
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
