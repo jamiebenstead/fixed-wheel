@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import WheelComponent from "./WheelComponent";
 import MultiLineNameInput from "./MultiLineNameInput";
 import WinnerPopup from "./WinnerPopup";
@@ -10,27 +10,9 @@ const App: React.FC = () => {
   const [winner, setWinner] = useState<string | null>(null);
   const [mustSpin, setMustSpin] = useState(false);
   const [winnerNumber, setWinnerNumber] = useState(0);
-  const [adminMode, setAdminMode] = useState(false);
   const [selectedWinnerName, setSelectedWinnerName] = useState<string | null>(
     null
   );
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
-
-      if (
-        e.shiftKey &&
-        (isMac ? e.metaKey : e.altKey) && // Use Command on Mac, Alt on Windows
-        e.key.toLowerCase() === "a"
-      ) {
-        setAdminMode((prev) => !prev);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   useEffect(() => {
     const newNames = rawInput
@@ -40,7 +22,7 @@ const App: React.FC = () => {
     setNames(newNames);
   }, [rawInput]);
 
-  const handleSpinClick = () => {
+  const handleSpinClick = useCallback(() => {
     if (names.length === 0) return;
 
     let chosenIndex: number;
@@ -53,7 +35,26 @@ const App: React.FC = () => {
 
     setWinnerNumber(chosenIndex);
     setMustSpin(true);
-  };
+  }, [names, selectedWinnerName]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().includes("MAC");
+
+      if (e.shiftKey && (isMac ? e.altKey : e.altKey)) {
+        const digitMatch = e.code.match(/^Digit([1-9])$/);
+        if (digitMatch) {
+          const index = parseInt(digitMatch[1], 10) - 1;
+          if (index < names.length) {
+            setSelectedWinnerName(names[index]);
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [names]);
 
   return (
     <div className="app-container">
@@ -77,33 +78,6 @@ const App: React.FC = () => {
           >
             Spin the Wheel!
           </button>
-          {adminMode && (
-            <div className="admin-panel">
-              <p style={{ fontWeight: "bold" }}>Admin Mode: Select a winner</p>
-              <ul>
-                {names.map((name) => (
-                  <li
-                    key={name}
-                    style={{
-                      cursor: "pointer",
-                      fontWeight:
-                        selectedWinnerName === name ? "bold" : "normal",
-                      backgroundColor:
-                        selectedWinnerName === name ? "#d0ffd0" : "transparent",
-                      padding: "4px",
-                    }}
-                    onClick={() =>
-                      setSelectedWinnerName((prev) =>
-                        prev === name ? null : name
-                      )
-                    }
-                  >
-                    {name}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       </div>
 
